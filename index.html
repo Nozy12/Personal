@@ -75,7 +75,20 @@ tr:last-child td{border-bottom:0}
 .xfer textarea{width:100%;box-sizing:border-box;font-size:13px;font-family:ui-monospace,Menlo,monospace;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
 .xmsg{font-size:13px;color:var(--mute);min-height:18px;padding:0 2px}.xmsg.bad{color:var(--accent)}
 .syncst{font-size:12px;color:var(--mute);margin-top:-6px;text-align:center}.syncst.on{color:#00a63e}.syncst.bad{color:var(--accent)}
-body.only .syncst,.acct{display:none;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--mute);width:100%;max-width:460px}
+body.only .syncst,.greet{position:fixed;inset:0;z-index:20;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+.greet.open{display:flex}
+.gin svg{width:132px;height:132px;filter:none}
+.gin{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
+.ghi{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-top:6px}
+.gt{margin:0;font-size:30px;line-height:1.15;font-weight:700}
+.gs{margin:0 0 6px;font-size:16px;line-height:1.45;color:var(--mute)}
+.gbtn{width:100%;font-size:17px;font-weight:600;padding:16px;border-radius:16px;cursor:pointer;font-family:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.gp{display:none;background:var(--ink);color:var(--bg);border:0}
+.greet.cfg .gp{display:block}
+.gq{background:var(--card)}
+.gm{min-height:18px;font-size:14px;color:var(--accent)}
+.gf{font-size:12px;color:var(--mute)}
+.acct{display:none;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--mute);width:100%;max-width:460px}
 .acct.on{display:flex}
 .acct button{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
 body.only .acct.on{display:none}
@@ -83,6 +96,18 @@ body.only .xfer,body.only .legend,body.only .add,body.only .list,body.only h1,bo
 </style>
 </head>
 <body>
+<div class="greet" id="greet" role="dialog" aria-modal="true" aria-labelledby="gHi">
+ <div class="gin">
+  <svg viewBox="-60 -60 120 120" width="132" height="132" aria-hidden="true"><circle r="55" fill="var(--face)" stroke="var(--bezel)" stroke-width="4"/><path d="M-9.1 -43.0 A44 44 0 0 1 43.0 9.1" fill="none" stroke="#8a1cff" stroke-width="8" stroke-linecap="round"/><path d="M29.4 32.7 A44 44 0 0 1 -41.8 13.6" fill="none" stroke="#0050ff" stroke-width="8" stroke-linecap="round"/><path d="M-43.9 -2.3 A44 44 0 0 1 -41.5 -14.7" fill="none" stroke="#00b140" stroke-width="8" stroke-linecap="round"/><path d="M-36.9 -24.0 A44 44 0 0 1 -18.9 -39.7" fill="none" stroke="#ff8000" stroke-width="8" stroke-linecap="round"/><line x1="0" y1="0" x2="25.1" y2="-6.7" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><circle r="4" fill="var(--accent)"/></svg>
+  <div class="ghi" id="gHi">Hello</div>
+  <h2 class="gt">Welcome to <span style="white-space:nowrap">My 24-Hour Day</span></h2>
+  <p class="gs">See your whole day on one dial. Plan tasks by type, set reminders, and keep it all in sync on every device.</p>
+  <button class="gbtn gp" id="gGoogle">Continue with Google</button>
+  <button class="gbtn gq" id="gGo">Continue without an account</button>
+  <div class="gm" id="gMsg"></div>
+  <div class="gf">Without an account, tasks stay in this browser only.</div>
+ </div>
+</div>
 <h1>My 24-hour day</h1>
 <div class="syncst" id="sync">Checking sync…</div>
 <div class="acct" id="acct"><button id="acctBtn">Sign in with Google</button><span id="acctMsg"></span></div>
@@ -368,6 +393,15 @@ window.W24={hook:null,get:()=>S,
  apply(d){try{const r=JSON.parse(d.json);if(!r||!Array.isArray(r.types)||!Array.isArray(r.tasks))return;
   S=r;S.ts=d.ts;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}render();drawDays()}catch(e){}}};
 function queuePush(){if(window.W24&&W24.hook)W24.hook()}
+(function(){const g=$("greet"),hr=new Date().getHours();
+ $("gHi").textContent=hr<5?"Good night":hr<12?"Good morning":hr<18?"Good afternoon":"Good evening";
+ let seen=false;try{seen=localStorage.getItem("watch24-greeted")==="1"}catch(e){}
+ const close=()=>{g.classList.remove("open");try{localStorage.setItem("watch24-greeted","1")}catch(e){}};
+ if(!seen)g.classList.add("open");
+ $("gGo").onclick=close;
+ $("gGoogle").onclick=()=>{$("gMsg").textContent="";if(window.W24&&W24.signIn)W24.signIn()};
+ window.W24greet={close,open(){try{localStorage.removeItem("watch24-greeted")}catch(e){}g.classList.add("open")}};
+})();
 </script>
 
 <script>
@@ -381,10 +415,10 @@ import {getFirestore,doc,setDoc,onSnapshot} from "https://www.gstatic.com/fireba
 const cfg=window.FIREBASE_CONFIG||{};
 if(cfg.apiKey&&cfg.projectId){
  const bar=document.getElementById("acct"),btn=document.getElementById("acctBtn"),msg=document.getElementById("acctMsg");
- const say=s=>{msg.textContent=s};
+ const say=s=>{msg.textContent=s;const gm=document.getElementById("gMsg");if(gm)gm.textContent=/^Sign-in failed/.test(s)?s:""};
  const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
  let unsub=null,ref=null,timer=null;
- bar.classList.add("on");
+ bar.classList.add("on");document.getElementById("greet").classList.add("cfg");
  function push(){
   if(!ref)return;clearTimeout(timer);
   timer=setTimeout(()=>{const S=W24.get();
@@ -406,10 +440,11 @@ if(cfg.apiKey&&cfg.projectId){
    if(c==="auth/popup-blocked"||c==="auth/operation-not-supported-in-this-environment"){try{await signInWithRedirect(auth,prov)}catch(_){say("Sign-in failed")}}
    else if(c==="auth/popup-closed-by-user"||c==="auth/cancelled-popup-request")say("Sign in to sync your tasks across devices");
    else say("Sign-in failed"+(c?": "+c:""))}}
+ W24.signIn=signIn;
  onAuthStateChanged(auth,u=>{
   if(unsub){unsub();unsub=null}ref=null;W24.hook=null;
   if(!u){btn.textContent="Sign in with Google";btn.onclick=signIn;say("Sign in to sync your tasks across devices");return}
-  btn.textContent="Sign out";btn.onclick=()=>signOut(auth);say((u.email||"Signed in")+" · syncing…");
+  btn.textContent="Sign out";btn.onclick=()=>signOut(auth).then(()=>W24greet.open());W24greet.close();say((u.email||"Signed in")+" · syncing…");
   ref=doc(db,"users",u.uid);W24.hook=push;unsub=listen()})
 }
 </script>
