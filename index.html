@@ -526,6 +526,30 @@ button,input,select,textarea,svg text{font-family:inherit}
 .rws2 .g2:last-child{padding-bottom:12px}
 .rws2 .g2+.g2,.rws2 .chips+.g2{padding-top:20px}
 .rws2>.dur{margin:-8px 0 12px}
+.lhd .selbtn{margin-left:auto;border:0;background:none;color:var(--accent);font-family:inherit;font-size:15px;font-weight:700;padding:6px 4px 6px 10px;cursor:pointer}
+.selbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:4;width:min(440px,calc(100% - 24px));box-sizing:border-box;display:flex;align-items:center;gap:4px;background:var(--ink);color:var(--bg);border-radius:18px;padding:8px 8px 8px 16px;box-shadow:0 12px 30px var(--shadow)}
+.selbar[hidden]{display:none}
+.selbar #selN{flex:1;min-width:0;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.selbar button{border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:var(--bg);font-family:inherit;font-size:14px;font-weight:700;padding:9px 12px;border-radius:12px;cursor:pointer}
+.selbar button:disabled{opacity:.35}
+.selbar button.d{color:#ff8f8f}
+.selbar button.d[data-arm="1"]{background:var(--bad);color:#fff}
+.selmenu{position:absolute;right:8px;bottom:calc(100% + 8px);min-width:170px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px var(--shadow);padding:6px;z-index:5}
+.selmenu[hidden]{display:none}
+.selbar .selmenu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;color:var(--ink);font-size:15px;font-weight:600;padding:11px 12px;border-radius:9px}
+.selmenu i{width:10px;height:10px;border-radius:50%;flex:none}
+.selmode tr{cursor:pointer}
+.selmode .ck,.selmode td.nm span,.selmode .sb{pointer-events:none}
+.selmode tr.sel td{background:color-mix(in srgb,var(--accent) 13%,transparent)}
+.selmode .ck{font-size:0;background:none!important;border-color:var(--mute)!important;box-shadow:none!important}
+.selmode tr.sel .ck{background:var(--accent)!important;border-color:var(--accent)!important}
+.selmode tr.sel .ck::after{content:"✓";font-size:13px;color:#fff}
+.selmode .tw tr{-webkit-user-select:none;user-select:none}
+.tw tr{-webkit-touch-callout:none}
+body.only .selbar{display:none}
+.selbar #selX{padding:0;width:32px;height:32px;border-radius:50%;font-size:14px;flex:none;margin-left:-8px}
+.selbar{padding-left:10px}
+.selbar #selN{padding-left:6px}
 </style>
 </head>
 <body class="locked">
@@ -553,6 +577,7 @@ button,input,select,textarea,svg text{font-family:inherit}
 
 <section class="statp" id="statp" aria-label="Statistics"></section>
 <div class="stt" id="stt" role="tooltip"></div>
+<div class="selbar" id="selbar" hidden><button id="selX" type="button" aria-label="Cancel selection">✕</button><span id="selN"></span><button id="selAll" type="button">All</button><button id="selDone" type="button">Done</button><button id="selType" type="button">Type</button><button id="selDel" type="button" class="d">Delete</button><div class="selmenu" id="selmenu" hidden></div></div>
 <nav class="tabs" id="tabs">
  <button class="tab on" id="tabDay" aria-pressed="true"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Day</span></button>
  <button class="tab" id="tabStats" aria-pressed="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span>Statistics</span></button>
@@ -726,6 +751,26 @@ function render(){
  if(keep&&(window.scrollY!==y||window.scrollX!==x))window.scrollTo(x,y);
  L.style.minHeight="";
  if(tpId!=null)tpDraw()}
+let selMode=false,selDay="";const selSet=new Set(),rkey=(t,sl)=>t.id+"|"+sl.k;
+function selOff(){selMode=false;selSet.clear();$("selmenu").hidden=true;selDelArm(0);selUpd()}
+function selUpd(){const L=$("list");if(selMode&&selDay!==selDate){selMode=false;selSet.clear()}
+ $("selbar").hidden=!selMode;L.classList.toggle("selmode",selMode);$("selN").textContent=selSet.size?selSet.size+" selected":"Tap tasks";
+ ["selDone","selType","selDel"].forEach(i=>$(i).disabled=!selSet.size);
+ L.querySelectorAll("tr[data-k]").forEach(tr=>tr.classList.toggle("sel",selSet.has(tr.dataset.k)));
+ const its=selItems();const dn=its.length&&its.every(x=>slotSt(x.t,selDate,x.sl)==="done");$("selDone").textContent=dn?"Undo":"Done"
+}
+function selItems(){const out=[];selSet.forEach(k=>{const[id,sk]=[k.slice(0,k.indexOf("|")),k.slice(k.indexOf("|")+1)];const t=S.tasks.find(x=>String(x.id)===id);if(!t)return;const sl=slotsOf(t).find(z=>z.k===sk);if(sl)out.push({t,sl})});return out}
+function selToggle(k){if(selSet.has(k))selSet.delete(k);else selSet.add(k);selUpd()}
+function selEnter(k){selMode=true;selDay=selDate;if(k)selSet.add(k);selUpd();try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}
+let selDelT;function selDelArm(on){clearTimeout(selDelT);const b=$("selDel");b.dataset.arm=on?"1":"";b.textContent=on?"Tap again":"Delete";if(on)selDelT=setTimeout(()=>selDelArm(0),3000)}
+$("selX").onclick=selOff;
+$("selAll").onclick=()=>{const ks=[...$("list").querySelectorAll("tr[data-k]")].map(r=>r.dataset.k);if(ks.every(k=>selSet.has(k)))selSet.clear();else ks.forEach(k=>selSet.add(k));selUpd()};
+$("selDone").onclick=()=>{const its=selItems();if(!its.length)return;const dn=its.every(x=>slotSt(x.t,selDate,x.sl)==="done");its.forEach(({t,sl})=>{t.doneOn=t.doneOn||{};const dk=selDate+sl.k;if(dn)delete t.doneOn[dk];else t.doneOn[dk]=true});selOff();persist();render()};
+$("selDel").onclick=()=>{const its=selItems();if(!its.length)return;if(!$("selDel").dataset.arm){selDelArm(1);return}
+ const ids=new Set(its.map(x=>x.t.id));S.tasks=S.tasks.filter(x=>!ids.has(x.id));if(ids.has(tpId))closeTask();selOff();persist();render();drawDays()};
+$("selType").onclick=()=>{const m=$("selmenu");if(!m.hidden){m.hidden=true;return}m.innerHTML="";S.types.forEach(ty=>{const b=document.createElement("button");b.type="button";b.innerHTML="<i></i><span></span>";b.querySelector("i").style.background=ty.color;b.querySelector("span").textContent=ty.name;
+  b.onclick=()=>{selItems().forEach(({t})=>{t.typeId=ty.id});m.hidden=true;selOff();persist();render()};m.appendChild(b)});m.hidden=false};
+document.addEventListener("pointerdown",e=>{const m=$("selmenu");if(!m.hidden&&!m.contains(e.target)&&e.target!==$("selType"))m.hidden=true});
 function renderCore(){
  ringG.innerHTML="";taskG.innerHTML="";
  S.types.forEach((ty,i)=>{
@@ -739,7 +784,7 @@ function renderCore(){
   }));
  });
  const L=$("list");L.innerHTML="";
- const VT=vis();if(!VT.length){L.innerHTML='<div class="empty">No tasks yet. Tap “Add task” to put one on the watch.</div>';return}
+ const VT=vis();if(!VT.length){L.innerHTML='<div class="empty">No tasks yet. Tap “Add task” to put one on the watch.</div>';selMode=false;selSet.clear();selUpd();return}
   const ids=S.types.map(z=>z.id);
   if(listTab!=="all"&&!ids.includes(listTab))listTab="all";
   const bar=document.createElement("div");bar.className="ltabs";bar.setAttribute("role","tablist");
@@ -760,6 +805,7 @@ function renderCore(){
   if(listTab==="all"){const orph=VT.filter(t=>!ids.includes(t.typeId));if(orph.length)groups.push({ty:{name:"Other",color:"#888888"},ts:orph})}
   if(listTab==="all"&&groups.length)groups.splice(0,groups.length,{ty:{name:"All tasks",color:null},ts:VT.slice()});
   if(!groups.length){const e=document.createElement("div");e.className="empty";e.textContent="No "+typeOf(listTab).name+" tasks on this day.";L.appendChild(e)}
+  const allKeys=new Set();
   groups.forEach(g=>{
   const gh=document.createElement("div");gh.className="tgh";gh.innerHTML="<i></i><b></b><span></span><em></em>";
   if(g.ty.color)gh.querySelector("i").style.background=g.ty.color;else gh.querySelector("i").style.display="none";gh.querySelector("b").textContent=g.ty.name;
@@ -776,6 +822,7 @@ function renderCore(){
   const cmp={name:(a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}),type:(a,b)=>tix(a.typeId)-tix(b.typeId),time:(a,b)=>a.start-b.start,sub:(a,b)=>sg(a)-sg(b)}[listSort.k];
   [...its].sort((A,B)=>listSort.d*(listSort.k==="time"?A.sl.s-B.sl.s:cmp(A.t,B.t))||(A.t===B.t?A.sl.o-B.sl.o:A.sl.s-B.sl.s)||A.t.name.localeCompare(B.t.name)).forEach(({t,sl,i})=>{
   const ty=typeOf(t.typeId),tr=document.createElement("tr"),subs=t.subs||[],dn=subs.filter(x=>x.done).length;
+  const rk=rkey(t,sl);tr.dataset.k=rk;allKeys.add(rk);
   tr.innerHTML='<td class="nm"><button class="ck"></button><i class="cd"></i><span></span></td>'+(listTab==="all"?'<td class="ty"><i></i><span></span></td>':"")+'<td class="tm"></td><td><button class="sb"></button></td>';
   tr.querySelector(".cd").style.background=t.color||ty.color;
   const nm=tr.querySelector(".nm span");nm.textContent=t.name+(t.rem>=0?"\u00a0🔔":"")+((t.rep||(t.date?"once":"daily"))!=="once"?"\u00a0↻":"");nm.title=t.name;nm.style.cursor="pointer";nm.onclick=()=>openTask(t);
@@ -785,8 +832,15 @@ function renderCore(){
   tr.querySelector(".tm").textContent=fmt(sl.s)+"–"+fmt(sl.e);
    {const tc=tr.querySelector(".ty");if(tc){tc.querySelector("i").style.background=ty.color;tc.querySelector("span").textContent=ty.name;tc.title=ty.name}}
   const sb=tr.querySelector(".sb");sb.textContent=subs.length?dn+"/"+subs.length:"+";sb.onclick=()=>openSubs(t.id);if(i>0)sb.remove();
+  {let lt=null,lx=0,ly=0,fired=0;const cancel=()=>{clearTimeout(lt);lt=null};
+   tr.addEventListener("pointerdown",e=>{if(selMode||e.button>0||(e.target.closest&&e.target.closest(".sb")))return;fired=0;lx=e.clientX;ly=e.clientY;lt=setTimeout(()=>{fired=1;selEnter(rk)},480)});
+   tr.addEventListener("pointermove",e=>{if(lt&&(Math.abs(e.clientX-lx)>8||Math.abs(e.clientY-ly)>8))cancel()});
+   ["pointerup","pointercancel","pointerleave"].forEach(ev=>tr.addEventListener(ev,cancel));
+   tr.addEventListener("contextmenu",e=>{if(fired||selMode)e.preventDefault()});
+   tr.addEventListener("click",e=>{if(fired){fired=0;e.stopPropagation();e.preventDefault();return}if(selMode){e.stopPropagation();e.preventDefault();selToggle(rk)}},true)}
   bd.appendChild(tr)});
  tw.appendChild(tb);L.appendChild(tw)});
+ [...selSet].forEach(k=>{if(!allKeys.has(k))selSet.delete(k)});selUpd();
 }
 
 // sheet
