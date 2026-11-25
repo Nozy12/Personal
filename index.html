@@ -460,6 +460,12 @@ button,input,select,textarea,svg text{font-family:inherit}
 .tpmi{display:block;width:100%;text-align:left;border:0;background:none;color:var(--ink);font-family:inherit;font-size:15px;font-weight:600;padding:11px 12px;border-radius:9px;cursor:pointer}
 .tpmi:hover,.tpmi:active{background:color-mix(in srgb,var(--ink) 7%,transparent)}
 .tpmi.del{color:var(--bad)}
+.hgrp{display:flex;align-items:center;gap:8px;margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);font-size:15px}
+.hgrp.fst{margin-top:6px;padding-top:0;border-top:0}
+.hgrp i{width:12px;height:12px;border-radius:4px;flex:none}
+.hgrp .hn{flex:1;min-width:0;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hgrp .hrt{font-size:12px;color:var(--mute);font-weight:600;white-space:nowrap}.hgrp .hrt b{color:var(--ink);font-size:14px;font-weight:800}
+.hgrp+.hrow{margin-top:10px}
 </style>
 </head>
 <body class="locked">
@@ -1205,12 +1211,16 @@ function renderStats(){
     const ty=S.types.find(x=>x.id===t.typeId)||{name:"",color:"#888888"};return{t,cells,c,col:t.color||ty.color,ty}});
    const c4=stCard("Tasks by day","Did you do each task? Filled = done, outlined = missed, faint = still to come");
    const fin=r=>r.c.done+r.c.missed;
-   if(stView==="table")c4.append(stTable(["Task","Done","Missed","To come","Rate"],rowsD.map(r=>[{name:r.t.name,color:r.col},r.c.done,r.c.missed,r.c.up+r.c.now,fin(r)?Math.round(r.c.done/fin(r)*100)+"%":"–"])));
+   if(stView==="table")c4.append(stTable(["Task","Type","Done","Missed","To come","Rate"],rowsD.map(r=>[{name:r.t.name,color:r.col},r.ty,r.c.done,r.c.missed,r.c.up+r.c.now,fin(r)?Math.round(r.c.done/fin(r)*100)+"%":"–"])));
    else{
     const lg=mk("div","hleg");[["d","Done"],["m","Missed"],["u","To come"],["n","In progress"]].forEach(([k,n])=>{const s=mk("span"),i=mk("i","hc "+k);s.append(i,document.createTextNode(n));lg.append(s)});c4.append(lg);
     const ax=mk("div","hax");ax.style.gridTemplateColumns="repeat("+days.length+",1fr)";
     days.forEach((ds,i)=>{const dt=parse(ds),s=mk("span",ds===today?"td":"");s.textContent=days.length===7?dt.toLocaleDateString(undefined,{weekday:"narrow"}):((dt.getDate()%5===0||i===0)?dt.getDate():"");ax.append(s)});c4.append(ax);
+    let lastTy=null,first=1;
     rowsD.forEach(r=>{
+     if(r.t.typeId!==lastTy){lastTy=r.t.typeId;const g=rowsD.filter(z=>z.t.typeId===lastTy),gd=g.reduce((s,z)=>s+z.c.done,0),gf=g.reduce((s,z)=>s+fin(z),0),gh=mk("div","hgrp"+(first?" fst":"")),gi=mk("i");first=0;gi.style.background=r.ty.color;
+      const gr=mk("span","hrt");gr.append(mk("b",null,gf?gd+"/"+gf:"–"),document.createTextNode(gf?" done":" none yet"));
+      gh.append(gi,mk("span","hn",r.ty.name||"Other"),gr);c4.append(gh)}
      const w=mk("div","hrow"),hd=mk("div","hhd"),dot=mk("i");dot.style.background=r.col;
      const rt=mk("span","hrt");rt.append(mk("b",null,fin(r)?r.c.done+"/"+fin(r):"–"),document.createTextNode(fin(r)?" done":" none yet"));
      hd.append(dot,mk("span","hn",r.t.name),rt);w.append(hd);
