@@ -864,6 +864,24 @@ body.v-lin .vlin{border-left:0;border-right:0;border-radius:0}
 .mh .hub .hl .pmbtn,.mh .hub .hl .pmbtn[data-m=short],.mh .hub .hl .pmbtn[data-m=long]{width:27px;height:27px;margin-right:0}
 .mh .hub .hl .pmbtn svg{width:27px!important;height:27px!important}
 @media (max-width:345px){.mh .hub .hl .pmbtn{width:25px;height:25px}.mh .hub .hl .pmbtn svg{width:25px!important;height:25px!important}}
+.vlin .vlp2 .bar{margin:0 -16px;height:10px;border-radius:0}
+.vlin .vlp2 .bar i{border-radius:0 99px 99px 0}
+.vlin .vlp2 .bar{width:calc(100% + 32px);max-width:none;align-self:flex-start;flex:none}
+.vlin .vlp2 .bar{width:100%;max-width:none;margin:0;height:8px;border-radius:99px;align-self:stretch;flex:none}
+.vlin .vlp2 .bar i{border-radius:99px}
+.vlin{gap:24px}
+.vlin .vlp2{gap:12px}
+.vlin .vlr{padding:2px 0}
+.vlin .vlp2:last-child{gap:10px}
+.rmnav{margin:2px 0 -2px}.rmnav .lab{width:auto;height:auto;border:0;background:none;border-radius:8px;font-family:inherit;padding:8px 0;cursor:pointer;color:var(--ink)}
+.mh .hub .hl .pmbtn{color:var(--mute);transition:color .2s}
+.mh .hub .hl .pmbtn.run{color:#f97316}
+.mh .hub .hl .pmbtn.run::after{background:currentColor!important}
+.mh .hub .hl .pmbtn.run[data-m=short],.mh .hub .hl .pmbtn.run[data-m=long]{color:#12a150}
+.mh .hub .hl .pmbtn[data-m=short]:not(.run),.mh .hub .hl .pmbtn[data-m=long]:not(.run){color:var(--mute)}
+.vlr.none span{color:var(--mute);font-weight:500}
+.rmwk{padding:0;margin:0 0 2px}.rmwk .dp{position:relative}.rmwk .dp.has::after{content:"";position:absolute;top:6px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--accent)}.rmwk .dp.on.has::after{background:var(--bg)}
+.rmnav .rmtd{flex:none;margin:0;width:auto!important;height:auto!important;border:0!important;border-radius:999px!important;background:var(--accent)!important;color:#fff!important;padding:5px 14px;font-size:13px!important;font-weight:600}.rmnav .lab{min-width:0}
 </style>
 </head>
 <body class="locked">
@@ -888,6 +906,8 @@ body.v-lin .vlin{border-left:0;border-right:0;border-radius:0}
 
 <section class="statp" id="statp" aria-label="Statistics"></section>
 <section class="focp" id="focp" aria-label="Reminders"><div class="st-hd"><h2 class="st-h">Reminders</h2><span class="rmcount" id="rmCount" aria-live="polite">0</span></div>
+<div class="st-nav rmnav"><button type="button" id="rmPrev" aria-label="Previous day">‹</button><button type="button" class="lab" id="rmLab" title="Go to today"></button><button type="button" class="today rmtd" id="rmToday">Today</button><button type="button" id="rmNext" aria-label="Next day">›</button></div>
+<div class="wk7 rmwk" id="rmWk" role="group" aria-label="Pick a day"></div>
 <div class="mcard rmcard"><div id="rmList"></div><div class="rmr rma"><span class="rmp" aria-hidden="true">+</span><input type="text" class="rmt" id="rmIn" placeholder="New reminder" maxlength="120" aria-label="New reminder"></div></div>
 <div class="mcard ncard"><div class="lhd"><h2>Notes</h2><button class="addp" id="nNew" type="button" aria-label="New note" title="New note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div><div class="nlist" id="nList"></div></div></section>
 <section class="menup" id="menup" aria-label="Profile"><h2 class="st-h">Profile</h2><div class="mcard"><div class="acct" id="acct"><div class="pf"><span class="pfav" id="pfAv"></span><div class="pft"><b id="pfName"></b><span id="pfMail"></span></div></div><span id="acctMsg"></span><button id="acctBtn">Sign out</button></div><p class="mnote">Sign-in isn’t available here.</p></div><div class="mcard" id="gcCard" hidden><div class="mct">Google Calendar</div><p class="mnote" id="gcMsg" style="display:block"></p><button class="gcb" id="gcBtn" type="button">Connect</button></div></section>
@@ -1625,12 +1645,14 @@ function vwLin(host){
  if(pct>0){const pa=mk("div","vlp");pa.style.width=(pct*100)+"%";lanes.append(pa)}
  if(nm!=null){const nl=mk("div","vln");nl.style.left=(pct*100)+"%";lanes.append(nl)}
  wrap.append(lanes);sc.append(wrap);c.append(sc);
- if(nm!=null){const rows=segs.slice().sort((x,y)=>x.a-y.a),cur=rows.find(s=>s.a<=nm&&nm<s.b),nx=rows.find(s=>s.a>nm);
-  const row=(lab,s,note)=>{const r=mk("div","vlr");const d=mk("i");d.style.background=s.c;r.append(mk("em",null,lab),d,mk("span",null,sn(s)),mk("small",null,note));return r};
+ {const isT=nm!=null,cm=isT?nm:selDate<td?1440:-1,rows=segs.slice().sort((x,y)=>x.a-y.a),cur=isT?rows.find(s=>s.a<=cm&&cm<s.b):null,nx=rows.find(s=>s.a>cm);
+  const row=(lab,s,note)=>{const r=mk("div","vlr");if(!s){r.append(mk("em",null,lab),mk("i"),mk("span",null,"\u2014"),mk("small",null,""));r.classList.add("none");return r}const d=mk("i");d.style.background=s.c;r.append(mk("em",null,lab),d,mk("span",null,sn(s)),mk("small",null,note));return r};
   const dur=m=>{m=Math.max(0,Math.round(m));return m>=60?Math.floor(m/60)+"h "+(m%60?m%60+"m":""):m+" min"};
   const box=mk("div","vlp2");
-  box.append(cur?row("Now",cur,"ends in "+dur(cur.b-nm)):mk("div","vlemp","Nothing right now"));
-  if(nx)box.append(row("Next",nx,"in "+dur(nx.a-nm)));c.append(box)}
+  const prv=rows.filter(s=>s.b<=cm).sort((x,y)=>y.b-x.b)[0];
+  if(prv)box.append(row("Prev",prv,isT?"ended "+dur(cm-prv.b)+" ago":"ended "+fmt(prv.b)));
+  box.append(row("Now",cur,cur?"ends in "+dur(cur.b-cm):""));
+  box.append(row("Next",nx,nx?(isT?"in "+dur(nx.a-cm):"starts "+fmt(nx.a)):""));c.append(box)}
  const done=tasks.filter(t=>statusOf(t,selDate)==="done").length,tt=mk("div","vlp2"),top=mk("div","t");top.append(mk("span",null,"Tasks done"),mk("span",null,done+" / "+tasks.length));
  const bar=mk("div","bar"),fi=mk("i");fi.style.width=(tasks.length?done/tasks.length*100:0)+"%";bar.append(fi);tt.append(top,bar);c.append(tt);host.append(c);
  {const N=lanes.querySelectorAll(".vll").length;
@@ -1820,7 +1842,10 @@ function notesRender(){
 $("nNew").onclick=()=>{const n={id:"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:"",blocks:[{id:nbId(),type:"p",text:""}],ts:Date.now()};S.notes.push(n);persist();openTask(n,true)};
 notesRender();
 // Reminders: a simple round-checkbox list
-let rmShowDone=false;
+let rmShowDone=false,rmDate=ymd(new Date());
+const rmDay=x=>x.date||ymd(new Date(x.ts||Date.now()));
+function rmLabel(ds){const t=ymd(new Date()),d=parse(ds),diff=Math.round((d-parse(t))/864e5);if(diff===0)return"Today";if(diff===1)return"Tomorrow";if(diff===-1)return"Yesterday";return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}
+function rmShift(n){const d=parse(rmDate);d.setDate(d.getDate()+n);rmDate=ymd(d);rmRender()}
 function rmRow(x){
  const R=S.reminders,r=mk("div","rmr"+(x.done?" dn":"")),c=mk("button","rmc");c.type="button";c.setAttribute("role","checkbox");c.setAttribute("aria-checked",String(!!x.done));c.setAttribute("aria-label","Done");
  const t=mk("input","rmt");t.type="text";t.value=x.text;t.maxLength=120;t.setAttribute("aria-label","Reminder");
@@ -1833,14 +1858,19 @@ function rmRow(x){
  d.onblur=()=>setTimeout(un,150);
  r.append(c,t,d);return r}
 function rmRender(){
- const el=$("rmList");if(!el)return;const R=S.reminders||(S.reminders=[]),open=R.filter(x=>!x.done),dn=R.filter(x=>x.done);
- $("rmCount").textContent=open.length;el.textContent="";
- if(!R.length)el.append(mk("div","rmemp","No reminders yet."));
+ const el=$("rmList");if(!el)return;const R=S.reminders||(S.reminders=[]),day=R.filter(x=>rmDay(x)===rmDate),open=day.filter(x=>!x.done),dn=day.filter(x=>x.done);$("rmLab").textContent=rmLabel(rmDate);
+ $("rmCount").textContent=open.length;el.textContent="";$("rmToday").style.display=rmDate===ymd(new Date())?"none":"";
+ {const wk=$("rmWk"),td=ymd(new Date()),m0=monOf(parse(rmDate));wk.textContent="";
+  for(let k=0;k<7;k++){const d=new Date(m0.getFullYear(),m0.getMonth(),m0.getDate()+k),ds=ymd(d),n=R.filter(x=>!x.done&&rmDay(x)===ds).length;
+   const bt=mk("button","dp"+(ds===rmDate?" on":"")+(ds===td?" td":"")+(n?" has":""));bt.type="button";bt.setAttribute("aria-label",d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})+(n?", "+n+" open":""));bt.setAttribute("aria-pressed",String(ds===rmDate));
+   bt.append(mk("small",null,d.toLocaleDateString(undefined,{weekday:"short"})),mk("b",null,String(d.getDate())));bt.onclick=()=>{rmDate=ds;rmRender()};wk.append(bt)}}
+ if(!day.length)el.append(mk("div","rmemp","No reminders for this day."));
  open.forEach(x=>el.append(rmRow(x)));
  if(dn.length){const b=mk("button","rmcb",(rmShowDone?"Hide":"Show")+" completed \u00b7 "+dn.length);b.type="button";b.onclick=()=>{rmShowDone=!rmShowDone;rmRender()};el.append(b);if(rmShowDone)dn.forEach(x=>el.append(rmRow(x)))}}
 (function(){const i=$("rmIn");if(!i)return;
- const add=()=>{const v=i.value.trim();if(!v)return;(S.reminders=S.reminders||[]).push({id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),text:v,done:false,ts:Date.now()});i.value="";persist();rmRender();i.focus()};
+ const add=()=>{const v=i.value.trim();if(!v)return;(S.reminders=S.reminders||[]).push({id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),text:v,done:false,date:rmDate,ts:Date.now()});i.value="";persist();rmRender();i.focus()};
  i.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add()}};i.onblur=()=>{if(i.value.trim())add()}})();
+$("rmToday").onclick=()=>{rmDate=ymd(new Date());rmRender()};$("rmPrev").onclick=()=>rmShift(-1);$("rmNext").onclick=()=>rmShift(1);$("rmLab").onclick=()=>{rmDate=ymd(new Date());rmRender()};
 rmRender();
 
 // ===== Statistics =====
@@ -2032,7 +2062,7 @@ function refreshStats(){if(document.body.classList.contains("stats"))renderStats
 function setTab(t){
  const st=t==="stats",fc=t==="focus",mn=t==="menu";document.body.classList.toggle("stats",st);document.body.classList.toggle("focus",fc);document.body.classList.toggle("menu",mn);
  [["tabDay",t==="day"],["tabStats",st],["tabFocus",fc],["tabMenu",mn]].forEach(([id,on])=>{$(id).classList.toggle("on",on);$(id).setAttribute("aria-pressed",String(on))});
- ttHide();if(st){stDate=selDate;renderStats()}window.scrollTo(0,0)}
+ ttHide();if(fc){rmDate=selDate;rmRender()}if(st){stDate=selDate;renderStats()}window.scrollTo(0,0)}
 $("tabDay").onclick=()=>setTab("day");$("tabStats").onclick=()=>setTab("stats");$("tabFocus").onclick=()=>setTab("focus");$("tabMenu").onclick=()=>setTab("menu");
 
 // Cross-device sync hook: filled in by the Google sign-in module below.
